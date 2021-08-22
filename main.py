@@ -83,10 +83,11 @@ def get_all_tweets(user, hashtag):
 
 def analyse_all_sentiment(res_json):
     response = []
-    if(res_json["meta"]["result_count"] > 0):
+    count = res_json["meta"]["result_count"]
+    if(count > 0):
         for x in res_json["data"]:
             lang = detect_dominant_language(x["text"])
             dominant = lang["Languages"][0]["LanguageCode"]
             response.append(analyse_sentiment(x["text"], dominant))
-        return {"data": response, "count": res_json["meta"]["result_count"]}
+        return {"data": response, "count": count}
     return {"message": "No result 😢"}
