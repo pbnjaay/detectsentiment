@@ -69,6 +69,7 @@ def analyse_sentiment(text, language_code):
         "text": text,
         "sentiment": response["Sentiment"],
         "score": response["SentimentScore"],
+        "language": language_code
     }
 
 
@@ -88,5 +89,4 @@ def analyse_all_sentiment(res_json):
             dominant = lang["Languages"][0]["LanguageCode"]
             response.append(analyse_sentiment(x["text"], dominant))
         return {"data": response, "count": res_json["meta"]["result_count"]}
-    else:
-        return {"message": "No result 😢"}
+    return {"message": "No result 😢"}
