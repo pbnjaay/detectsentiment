@@ -1,17 +1,43 @@
 import requests
 import yaml
 import boto3
-import json
+from flask_cors import CORS
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 comprehend = boto3.client(service_name='comprehend', region_name='us-east-1')
 
 
-def create_twitter_url():
-    handle = "Macky_Sall"
-    hashtag = ""
+@app.route("/api/v1/<user>")
+@app.route("/api/v1/<user>/<hashtag>")
+def hello_world(user, hashtag=""):
+    return analyse_all_sentiment(get_all_tweets(user, hashtag))
+
+
+@app.route("/api/v1/<user>/avg")
+@app.route("/api/v1/<user>/<hashtag>/avg")
+def avg(user, hashtag=""):
+    response = analyse_all_sentiment(get_all_tweets(user, hashtag))
+    av = {"MIXED": 0, "NEGATIVE": 0, "NEUTRAL": 0, "POSITIVE": 0}
+    for x in response["data"]:
+        av[x["sentiment"]] = av[x["sentiment"]]+1
+
+    for k, v in av.items():
+        av[k] = v / response["count"]
+    return {"average": av}
+
+
+def create_twitter_url(user: str, hashtag: str):
     max_results = 100
     mrf = "max_results={}".format(max_results)
-    q = "query={} from:{}".format(hashtag, handle)
+    q = ""
+    if(hashtag == ""):
+        q = "query={} from:{}".format(hashtag, user)
+    else:
+        q = "query={} from:{}".format("%23"+hashtag, user)
     url = "https://api.twitter.com/2/tweets/search/recent?{}&{}".format(
         mrf, q
     )
@@ -38,21 +64,29 @@ def detect_dominant_language(text):
 
 
 def analyse_sentiment(text, language_code):
-    print('Calling DetectSentiment')
-    print(text)
-    print(json.dumps(comprehend.detect_sentiment(Text=text, LanguageCode=language_code), sort_keys=True, indent=4))
-    print('End of DetectSentiment\n')
+    response = comprehend.detect_sentiment(Text=text, LanguageCode=language_code)
+    return {
+        "text": text,
+        "sentiment": response["Sentiment"],
+        "score": response["SentimentScore"],
+    }
 
 
-def main():
-    url = create_twitter_url()
+def get_all_tweets(user, hashtag):
+    url = create_twitter_url(user, hashtag)
     data = process_yaml()
     bearer_token = create_bearer_token(data)
     res_json = twitter_auth_and_connect(bearer_token, url)
-    for x in res_json["data"]:
-        lang = detect_dominant_language(x["text"])
-        analyse_sentiment(x["text"], lang["Languages"][0]["LanguageCode"])
+    return res_json
 
 
-if __name__ == "__main__":
-    main()
+def analyse_all_sentiment(res_json):
+    response = []
+    if(res_json["meta"]["result_count"] > 0):
+        for x in res_json["data"]:
+            lang = detect_dominant_language(x["text"])
+            dominant = lang["Languages"][0]["LanguageCode"]
+            response.append(analyse_sentiment(x["text"], dominant))
+        return {"data": response, "count": res_json["meta"]["result_count"]}
+    else:
+        return {"message": "No result 😢"}
