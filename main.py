@@ -69,8 +69,19 @@ def analyse_sentiment(text, language_code):
         "text": text,
         "sentiment": response["Sentiment"],
         "score": response["SentimentScore"],
-        "language": language_code
+        "language": language_code,
+        "emoji": detect_emoji(response["Sentiment"])
     }
+
+
+def detect_emoji(sens):
+    switcher = {
+        "MIXED": "😵",
+        "NEGATIVE": "😡",
+        "NEUTRAL": "🥱",
+        "POSITIVE": "😍",
+    }
+    return switcher.get(sens)
 
 
 def get_all_tweets(user, hashtag):
