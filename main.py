@@ -30,17 +30,21 @@ def avg(user, hashtag=""):
     return {"average": av}
 
 
+@app.route("/api/v1/replies/<conversation_id>")
+def all_replies(conversation_id):
+    response = analyse_all_sentiment(get_all_replies(conversation_id))
+    return response
+
+
 def create_twitter_url(user: str, hashtag: str):
-    max_results = 100
+    max_results = 10
     mrf = "max_results={}".format(max_results)
     q = ""
     if(hashtag == ""):
         q = "query={} from:{}".format(hashtag, user)
     else:
         q = "query={} from:{}".format("%23"+hashtag, user)
-    url = "https://api.twitter.com/2/tweets/search/recent?{}&{}".format(
-        mrf, q
-    )
+    url = "https://api.twitter.com/2/tweets/search/recent?{}&{}".format(mrf, q)
     return url
 
 
@@ -63,9 +67,10 @@ def detect_dominant_language(text):
     return comprehend.detect_dominant_language(Text=text)
 
 
-def analyse_sentiment(text, language_code):
+def analyse_sentiment(text, language_code, id):
     response = comprehend.detect_sentiment(Text=text, LanguageCode=language_code)
     return {
+        "id": id,
         "text": text,
         "sentiment": response["Sentiment"],
         "score": response["SentimentScore"],
@@ -92,13 +97,24 @@ def get_all_tweets(user, hashtag):
     return res_json
 
 
+def get_all_replies(conversation_id):
+    max_results = 10
+    mrf = "max_results={}".format(max_results)
+    url = "https://api.twitter.com/2/tweets/search/recent?{}&query=conversation_id:{}".format(mrf, conversation_id)
+    data = process_yaml()
+    bearer_token = create_bearer_token(data)
+    res_json = twitter_auth_and_connect(bearer_token, url)
+    return res_json
+
+
 def analyse_all_sentiment(res_json):
     response = []
     count = res_json["meta"]["result_count"]
     if(count > 0):
         for x in res_json["data"]:
+            id = x["id"]
             lang = detect_dominant_language(x["text"])
             dominant = lang["Languages"][0]["LanguageCode"]
-            response.append(analyse_sentiment(x["text"], dominant))
+            response.append(analyse_sentiment(x["text"], dominant, id))
         return {"data": response, "count": count}
     return {"message": "No result 😢"}
