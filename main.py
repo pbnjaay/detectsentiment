@@ -2,7 +2,7 @@ import requests
 import yaml
 import boto3
 from flask_cors import CORS
-from flask import Flask, jsonify
+from flask import Flask
 
 app = Flask(__name__)
 
@@ -17,10 +17,9 @@ def hello_world(user, hashtag=""):
     return analyse_all_sentiment(get_all_tweets(user, hashtag))
 
 
-@app.route("/api/v1/<user>/avg")
-@app.route("/api/v1/<user>/<hashtag>/avg")
-def avg(user, hashtag=""):
-    response = analyse_all_sentiment(get_all_tweets(user, hashtag))
+@app.route("/api/v1/replies/<conversation_id>/avg")
+def avg(conversation_id):
+    response = analyse_all_sentiment(get_all_replies(conversation_id))
     av = {"MIXED": 0, "NEGATIVE": 0, "NEUTRAL": 0, "POSITIVE": 0}
     for x in response["data"]:
         av[x["sentiment"]] = av[x["sentiment"]]+1
@@ -84,7 +83,7 @@ def detect_emoji(sens):
         "MIXED": "😵",
         "NEGATIVE": "😡",
         "NEUTRAL": "🥱",
-        "POSITIVE": "😍",
+        "POSITIVE": "😀",
     }
     return switcher.get(sens)
 
@@ -98,7 +97,7 @@ def get_all_tweets(user, hashtag):
 
 
 def get_all_replies(conversation_id):
-    max_results = 10
+    max_results = 30
     mrf = "max_results={}".format(max_results)
     url = "https://api.twitter.com/2/tweets/search/recent?{}&query=conversation_id:{}".format(mrf, conversation_id)
     data = process_yaml()
@@ -109,12 +108,14 @@ def get_all_replies(conversation_id):
 
 def analyse_all_sentiment(res_json):
     response = []
+    langs = ["ar", "hi", "ko", "zh-TW", "ja", "zh", "de", "pt", "en", "it", "fr", "es"]
     count = res_json["meta"]["result_count"]
     if(count > 0):
         for x in res_json["data"]:
             id = x["id"]
             lang = detect_dominant_language(x["text"])
             dominant = lang["Languages"][0]["LanguageCode"]
-            response.append(analyse_sentiment(x["text"], dominant, id))
+            if(dominant in langs):
+                response.append(analyse_sentiment(x["text"], dominant, id))
         return {"data": response, "count": count}
     return {"message": "No result 😢"}
