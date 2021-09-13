@@ -1,13 +1,13 @@
-import boto3
 from flask_cors import CORS
 from flask import Flask
-from utils import analyse_all_sentiment, get_all_tweets, get_all_replies, average, scrap_comment
+from utils import average
+from comprehend import analyse_all_sentiment
+from twitter import get_all_replies, get_all_tweets
+from scraping import scrap_comment
 
 app = Flask(__name__)
 
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
-
-comprehend = boto3.client(service_name='comprehend', region_name='us-east-1')
 
 
 @app.route("/api/v1/<user>")
