@@ -24,8 +24,7 @@ def avg(conversation_id):
 
 @app.route("/api/v1/replies/<conversation_id>")
 def all_replies(conversation_id):
-    response = analyse_all_sentiment(get_all_replies(conversation_id))
-    return response
+    return analyse_all_sentiment(get_all_replies(conversation_id))
 
 
 @app.route("/api/v1/seneweb/<type>/<url>")
