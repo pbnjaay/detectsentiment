@@ -3,21 +3,28 @@ import boto3
 
 
 comprehend = boto3.client(service_name='comprehend', region_name='us-east-1')
+langs = ["ar", "hi", "ko", "zh-TW", "ja", "zh", "de", "pt", "en", "it", "fr", "es"]
+
+
+def is_analysable(lang):
+    return (lang in langs)
+
+
+def get_dominant_language(text):
+    lang = detect_dominant_language(text)
+    return lang["Languages"][0]["LanguageCode"]
 
 
 def analyse_all_sentiment(res_json):
     response = []
-    langs = ["ar", "hi", "ko", "zh-TW", "ja", "zh", "de", "pt", "en", "it", "fr", "es"]
     count = res_json["meta"]["result_count"]
-    if(count > 0):
-        for x in res_json["data"]:
-            id = x["id"]
-            lang = detect_dominant_language(x["text"])
-            dominant = lang["Languages"][0]["LanguageCode"]
-            if(dominant in langs):
-                response.append(analyse_sentiment(x["text"], dominant, id))
-        return {"data": response, "count": count}
-    return {"message": "No result 😢"}
+    if(count <= 0):
+        return {"message": "No result 😢"}
+    for x in res_json["data"]:
+        dominant = get_dominant_language(x["text"])
+        if(dominant in langs):
+            response.append(analyse_sentiment(x["text"], dominant, x["id"]))
+    return {"data": response, "count": count}
 
 
 def analyse_sentiment(text, language_code, id):

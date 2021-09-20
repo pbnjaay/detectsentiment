@@ -7,10 +7,10 @@ def create_twitter_url(user: str, hashtag: str):
     mrf = "max_results={}".format(max_results)
     q = ""
     if(hashtag == ""):
-        q = "query={} from:{}".format(hashtag, user)
+        q = f"query={hashtag} from:{user}"
     else:
         q = "query={} from:{}".format("%23"+hashtag, user)
-    url = "https://api.twitter.com/2/tweets/search/recent?{}&{}".format(mrf, q)
+    url = f"https://api.twitter.com/2/tweets/search/recent?{mrf}&{q}"
     return url
 
 

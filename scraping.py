@@ -7,7 +7,7 @@ def scrap_comment(type, url):
         'data': [],
         'meta': {'result_count': 0}
     }
-    html_doc = requests.get("https://www.seneweb.com/news/{}/{}".format(type, url)).text
+    html_doc = requests.get(f"https://www.seneweb.com/news/{type}/{url}").text
     soup = BeautifulSoup(html_doc, 'lxml')
     comments = soup.find_all('div', class_='comment_item_content')
     for index, comment in enumerate(comments):
