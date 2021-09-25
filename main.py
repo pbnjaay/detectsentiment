@@ -36,3 +36,7 @@ def get_comment(type, url):
 def sen_avg(type, url):
     response = analyse_all_sentiment(scrap_comment(type, url))
     return {"average": average(response)}
+
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0')
